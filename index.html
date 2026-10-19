@@ -123,6 +123,11 @@ nav button.on{color:var(--accentInk);border-top-color:var(--accent);background:c
 .side{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}
 .side .nm{font-size:13.5px;overflow-wrap:break-word}
 .side.b{text-align:right;align-items:flex-end}
+.rpt{display:inline-block;margin-top:3px;padding:1px 7px;border-radius:999px;font:700 10px 'Outfit',system-ui,sans-serif;letter-spacing:.02em;
+  color:var(--goldInk);background:color-mix(in srgb,var(--gold) 16%,transparent);border:1px solid color-mix(in srgb,var(--gold) 45%,transparent);white-space:nowrap}
+.rptSum .dimtxt{color:var(--dim);font-weight:600}
+.rptSum{margin:0 13px 10px;padding:7px 10px;border-radius:9px;font-size:11.5px;line-height:1.45;color:var(--goldInk);
+  background:color-mix(in srgb,var(--gold) 10%,transparent);border:1px solid color-mix(in srgb,var(--gold) 35%,transparent)}
 .side.w .nm{color:var(--win);font-weight:700}
 .side.l .nm{color:var(--muted)}
 input.sc{width:44px;height:36px;text-align:center;background:var(--surface);border:1px solid var(--border);
@@ -207,6 +212,7 @@ input.txt:focus,select.txt:focus{outline:0;border-color:var(--accent)}
 .crtRow .crtDel{margin-bottom:4px}
 .crtRow .crtMeta{grid-column:1/-1;font-size:11.5px;color:var(--dim)}
 @media(max-width:560px){.crtRow{grid-template-columns:1fr 1fr auto}.crtRow>div:nth-child(1){grid-column:1/3}.crtRow .crtDel{grid-column:3;grid-row:1}}
+.chipSep{width:1px;align-self:stretch;background:var(--border);margin:2px 2px}
 .rdMark{padding:7px 14px;font:800 10.5px 'Outfit',system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);background:var(--cardAlt);border-top:1px solid var(--borderL)}
 .hdBtns{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}
 .editBtn{padding:5px 10px;font-size:11.5px}
@@ -339,6 +345,13 @@ a.tel{color:var(--accent);font-weight:700;text-decoration:none}
 .pSlot .sl{font:800 12px 'Outfit',system-ui,sans-serif;color:#fde047;flex:none}
 .pSlot .pn{font-size:14.5px;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.55)}
 .ball{flex:none;display:inline-block;vertical-align:-2px}
+.servetag.ghost{visibility:hidden}
+.ballSlot{display:inline-flex;width:16px;height:16px;flex:none}
+.pSlot{flex-wrap:nowrap!important}
+.pSlot .pn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gamept{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:34px;box-sizing:border-box}
+.gamept.idle{background:var(--card);border:1px solid var(--border);color:var(--dim);font-weight:600}
+.sTeam .nm2{min-height:2.5em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .servetag{font:800 8.5px 'Outfit',system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#fde047;margin-top:2px}
 .taphint{position:absolute;bottom:4px;left:0;right:0;text-align:center;font:800 8.5px 'Outfit',system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px;color:rgba(255,255,255,.6);letter-spacing:.07em;text-transform:uppercase;z-index:3;pointer-events:none}
 .endsnote{display:flex;justify-content:space-between;align-items:center;gap:9px;flex-wrap:wrap;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:10px}
@@ -379,6 +392,8 @@ a.tel{color:var(--accent);font-weight:700;text-decoration:none}
   #printArea th.sc,#printArea td.sc{width:14mm;text-align:center;font-weight:800}
   #printArea th.st,#printArea td.st{width:26mm}
   #printArea td.w{font-weight:800}
+  #printArea tr.rd td{font:800 10px 'Outfit',Arial;text-transform:uppercase;letter-spacing:.06em;background:#f1f1f1;padding:4px 6px}
+  #printArea i.rp{font-style:normal;color:#a16207;font-weight:800}
   #printArea table.ps{font-size:9px}
   #printArea table.ps td{height:12mm;padding:1px 3px;text-align:center;line-height:1.15}
   #printArea table.ps th{text-align:center;padding:3px 2px;font-size:8px}
@@ -414,7 +429,7 @@ a.tel{color:var(--accent);font-weight:700;text-decoration:none}
    of the other four once. "Add a game" carries on; exact combinations repeat
    only once the fresh ones have run out.
    ===================================================================== */
-const BUILD = 'community build 2026-10-19c';
+const BUILD = 'community build 2026-10-19f';
 const ADMIN_DEFAULT = 'Hello43556';
 const ORGANISER = 'RISE Sports';
 const CONTACT = '9987029222';
@@ -520,11 +535,13 @@ function candidates(players){
   }
   return out;
 }
-function newHist(players){ const h={play:{},part:{},opp:{},match:{},last:null}; players.forEach(p=>{h.play[p]=0;}); return h; }
+function newHist(players){ const h={play:{},part:{},opp:{},match:{},streak:{},last:null}; players.forEach(p=>{h.play[p]=0;h.streak[p]=0;}); return h; }
 function cloneHist(h){ return {play:Object.assign({},h.play),part:Object.assign({},h.part),
-  opp:Object.assign({},h.opp),match:Object.assign({},h.match),last:h.last}; }
+  opp:Object.assign({},h.opp),match:Object.assign({},h.match),streak:Object.assign({},h.streak),last:h.last}; }
 function addHist(h,g){
-  [...g.a,...g.b].forEach(p=>{h.play[p]=(h.play[p]||0)+1;});
+  const on=[...g.a,...g.b];
+  on.forEach(p=>{h.play[p]=(h.play[p]||0)+1;});
+  Object.keys(h.streak).forEach(p=>{ const s=h.streak[p]||0; h.streak[p]=on.indexOf(p)>=0?(s>0?s+1:1):(s<0?s-1:-1); });
   [g.a,g.b].forEach(t=>{ const k=pairKey(t[0],t[1]); h.part[k]=(h.part[k]||0)+1; });
   g.a.forEach(x=>g.b.forEach(y=>{ const k=pairKey(x,y); h.opp[k]=(h.opp[k]||0)+1; }));
   const mk=matchKey(g); h.match[mk]=(h.match[mk]||0)+1;
@@ -533,13 +550,15 @@ function addHist(h,g){
 function costOf(h,g){
   let c=0;
   [...g.a,...g.b].forEach(p=>{ c+=(h.play[p]||0)*1000; });
-  if(h.last) g.sit.forEach(p=>{ if(h.last.sit.indexOf(p)>=0) c+=5000; });
+  // nobody plays or waits more than 2 games running if it can be helped
+  [...g.a,...g.b].forEach(p=>{ const s=h.streak[p]||0; if(s>=2) c+=4000*(s-1); });
+  g.sit.forEach(p=>{ const s=h.streak[p]||0; if(s<=-2) c+=4000*(-s-1); else if(s<0) c+=300; });
   // partner repeats cost more the more often a pair has already teamed up, so over a
   // long session every pair partners the same number of times (5 players, 10 games:
   // everyone partners everyone exactly twice) — even if one exact match-up has to repeat
   [g.a,g.b].forEach(t=>{ const k=h.part[pairKey(t[0],t[1])]||0; c+=k*k*400; });
   g.a.forEach(x=>g.b.forEach(y=>{ c+=(h.opp[pairKey(x,y)]||0)*20; }));
-  c+=(h.match[matchKey(g)]||0)*250;
+  c+=(h.match[matchKey(g)]||0)*2500;
   return c;
 }
 function planGames(players,existing,count){
@@ -556,28 +575,37 @@ function planGames(players,existing,count){
 }
 const freshGame = g => ({a:g.a.slice(),b:g.b.slice(),sit:g.sit.slice(),sa:null,sb:null,log:null});
 /* ===================== fixture rounds =====================
-   A round is the shortest run of games in which every player partners every
-   other player at least once AND plays against every other player at least
-   once, with the games shared out evenly. Worked out in advance for 4 to 8
-   10 players (characters are places in the group list, a = 10th: 13v24 = 1st & 3rd v 2nd & 4th):
-     4 → 3 games  (3 each, partners once, opponents twice)
-     5 → 5 games  (4 each, partners once, opponents twice)
-     6 → 9 games  (6 each, every partner at least once, one partner twice)
-     7 → 11 games (6–7 each; 7 cannot share 11 games evenly)
-     8 → 14 games (7 each, every partner exactly once)
-     9 → 18 games (8 each, every partner exactly once) · 10 → 23 games (9–10 each)
-   No one sits out twice running, even where the round starts again (8 players
-   or more on one court is the exception — half of them sit every game). If
-   there is time, the same round simply repeats. Above 10 players the general
-   rotation below takes over. */
+   The rules every round follows, whatever the group size:
+     1. everyone partners everyone at least once;
+     2. no game (the same two pairs facing each other) is played twice in a round;
+     3. everyone plays the same number of games (or within one, when the
+        numbers cannot split evenly);
+     4. nobody plays more than 2 games in a row or sits out more than 2 —
+        3 only where the numbers make 2 impossible, and never 4 (the one
+        exception is 5 players: only one rests each game, so everyone plays
+        4 in a row);
+     5. everyone plays against everyone at least once;
+     6. a pair that has to partner twice is spread apart, and marked on the
+        Games tab so nobody is surprised.
+   Rules 4 and 6 hold across the join too, so the round can simply repeat.
+   Worked out in advance (characters are places in the group list, a = 10th;
+   13v24 = 1st & 3rd v 2nd & 4th):
+     4 →  3 games · 3 each · everyone plays every game
+     5 →  5 games · 4 each · partners exactly once · 4 in a row (one rests per game)
+     6 →  9 games · 6 each · three pairs partner twice · at most 2 in a row, never sits 2
+     7 → 11 games · 6–7 each · one pair twice · at most 2 in a row, at most 2 out
+     8 → 14 games · 7 each · partners exactly once · at most 2 in a row, at most 2 out
+     9 → 18 games · 8 each · partners exactly once · at most 2 in a row, at most 2 out (3 once, across the join)
+    10 → 25 games · 10 each · at most 2 in a row, at most 3 out
+   Above 10 players the general rotation below takes over. */
 const ROUNDS = {
   4:'13v24 14v23 12v34',
-  5:'12v34 23v45 13v25 14v35 15v24',
-  6:'16v45 23v56 14v23 15v36 25v46 12v34 14v56 24v35 13v26',
-  7:'17v56 14v23 26v57 13v46 25v47 12v36 26v45 15v37 24v67 16v35 27v34',
-  8:'27v56 18v34 26v47 15v28 35v46 17v38 24v58 12v36 45v78 23v67 14v57 13v68 25v37 16v48',
-  9:'39v56 17v48 15v29 45v67 13v28 46v59 26v38 18v49 27v36 24v58 14v37 25v79 34v69 16v57 35v89 12v68 23v47 19v78',
-  10:'27v38 14v59 36v78 15v49 2av68 34v79 28v56 47v9a 18v23 57v69 12v3a 45v68 1av37 26v89 17v8a 39v46 25v7a 16v35 29v48 13v5a 24v67 4av58 19v6a'
+  5:'15v34 24v35 14v23 13v25 12v45',
+  6:'12v34 13v56 25v46 14v23 15v36 26v45 13v24 16v35 24v56',
+  7:'27v35 13v47 12v56 24v37 15v36 45v67 17v23 14v26 34v57 16v37 25v46',
+  8:'25v38 16v45 23v47 12v58 17v36 48v57 18v24 26v35 34v78 14v68 27v56 15v37 28v46 13v67',
+  9:'19v58 24v67 36v59 18v47 27v56 28v39 13v49 26v57 29v48 14v35 69v78 12v37 15v46 45v89 17v23 68v79 25v34 16v38',
+  10:'28v57 13v48 67v9a 25v8a 14v36 19v47 27v5a 16v38 45v89 23v7a 15v34 26v49 6av78 1av59 24v37 68v9a 17v35 2av46 18v69 39v57 12v4a 26v58 38v79 14v29 3av56'
 };
 function roundOf(players){
   const P=players.filter(Boolean), pat=ROUNDS[P.length]; if(!pat) return null;
@@ -690,7 +718,7 @@ function load(){
     if(p&&Array.isArray(p.sessions)){
       const b=blank();
       Object.keys(b).forEach(k=>{ if(p[k]===undefined) p[k]=b[k]; });
-      p.meta=Object.assign({},SEED_META,p.meta); p.rules=normRules(p.rules); p.access=normAccess(p.access); normBrand(p); p.ref=null;
+      p.meta=Object.assign({},SEED_META,p.meta); if(!p.themeSet){ p.theme='light'; } p.rules=normRules(p.rules); p.access=normAccess(p.access); normBrand(p); p.ref=null;
       p.sessions.forEach(s=>{ s.games=s.games||[]; s.players=s.players||[]; });
       return p; } } }catch(e){}
   return blank();
@@ -882,8 +910,8 @@ function cboxHTML(g,k,side,st,over){
   const srv=st.serving===k&&st.servePos===side&&!over;
   return `<div class="cbox ${over?'locked':''} ${srv?'serving':''}" ${over?'':`onclick="refPoint('${k}')"`}>
     <div class="posTag">${side==='R'?'Right / even':'Left / odd'}</div>
-    <div class="pSlot">${srv?BALL:''}<span class="sl">${k.toUpperCase()}${idx+1}</span><span class="pn">${esc(nm)}</span></div>
-    ${srv?`<div class="servetag">serving from the ${side==='R'?'right':'left'}</div>`:''}</div>`;
+    <div class="pSlot"><span class="ballSlot">${srv?BALL:''}</span><span class="sl">${k.toUpperCase()}${idx+1}</span><span class="pn">${esc(nm)}</span></div>
+    <div class="servetag ${srv?'':'ghost'}">serving from the ${side==='R'?'right':'left'}</div></div>`;
 }
 function renderRef(){
   if(!S.ref){ $('refRoot').innerHTML=''; return; }
@@ -901,11 +929,18 @@ function renderRef(){
     h+=`<div class="gamept win">🏆 ${esc(w)} win ${lead}–${lo}${lead===CAP&&lo===GOLDEN?' on the golden point':''}</div>`; }
   else if(isGolden(st.a,st.b)) h+=`<div class="gamept golden">⚡ <b>Golden point</b> — the next rally wins at ${CAP}–${GOLDEN}.</div>`;
   else if(gps.length) h+=`<div class="gamept">Game point · ${gps.map(k=>esc(nameOf(k))).join(' &amp; ')}</div>`;
+  else h+=`<div class="gamept idle">${esc(nameOf(st.serving))} to serve · ${st.a+st.b} ${st.a+st.b===1?'rally':'rallies'}</div>`;
   h+=`<div class="scorestrip">
     <div class="sTeam"><div class="stripe" style="background:${colOf(L)}"></div><div class="nm2">${esc(nameOf(L))}</div><div class="num" style="color:${colOf(L)}">${scoreOf(L)}</div></div>
     <div class="phasebox"><div class="cv">${over?'—':(st.serving===L?BALL+'<span>◀</span>':'<span>▶</span>'+BALL)}</div><div class="cl">Serve</div></div>
     <div class="sTeam right"><div class="stripe" style="background:${colOf(R)}"></div><div class="nm2">${esc(nameOf(R))}</div><div class="num" style="color:${colOf(R)}">${scoreOf(R)}</div></div></div>`;
-  if(fresh&&!over){
+  h+=`<div class="court"><div class="half a">${cboxHTML(g,L,'L',st,over)}${cboxHTML(g,L,'R',st,over)}<div class="kitchen"></div><div class="taphint">${over?'':'tap = +1 '}${esc(nameOf(L))}</div></div>
+    <div class="net"></div><div class="half b">${cboxHTML(g,R,'R',st,over)}${cboxHTML(g,R,'L',st,over)}<div class="kitchen"></div><div class="taphint">${over?'':'tap = +1 '}${esc(nameOf(R))}</div></div></div>
+    <div class="endsnote"><span>${ends&&isFinite(SWITCH_AT)?`⇄ Ends changed at ${SWITCH_AT}`:''}</span><button class="btn sm ${g.invert?'acc':''}" onclick="refInvert()">⇄ ${g.invert?'View flipped':'Flip my view'}</button></div>
+    <div class="ctrls">${[L,R].map(k=>`<div class="ctrlrow"><button class="rbtn" onclick="refMinus('${k}')" ${scoreOf(k)===0?'disabled':''}>−</button>
+      <div class="tl">${esc(nameOf(k))}</div><button class="rbtn plus" onclick="refPoint('${k}')" ${over?'disabled':''} style="background:${colOf(k)}">+</button></div>`).join('')}</div>
+    `;
+  if(fresh&&!over){ h+=`<div class="eyebrow" style="margin:2px 2px 6px">Before the first rally</div>`;
     h+=`<div class="tossbar"><span class="eyebrow">Serves first</span>${[L,R].map(k=>`<button class="btn sm ${g.server===k?'acc':''}" onclick="refSet('server','${k}')">${g.server===k?'● ':''}${esc(nameOf(k))}</button>`).join('')}
       <span class="dimtxt">first server starts on the right</span></div>
       <div class="tossbar"><span class="eyebrow">Court sides</span><span style="font-size:12px;font-weight:700">${esc(nameOf(L))} <span class="dimtxt">left</span> · ${esc(nameOf(R))} <span class="dimtxt">right</span></span>
@@ -914,11 +949,7 @@ function renderRef(){
         return `<span style="font-size:11.5px;font-weight:700">${esc((k==='a'?g.a:g.b)[idx])} <span class="dimtxt">right</span>
           <button class="btn sm" onclick="refSet('${k==='a'?'posA':'posB'}',${(k==='a'?g.posA:g.posB)?0:1})">⇄</button></span>`; }).join('')}</div>`;
   }
-  h+=`<div class="court"><div class="half a">${cboxHTML(g,L,'L',st,over)}${cboxHTML(g,L,'R',st,over)}<div class="kitchen"></div><div class="taphint">${over?'':'tap = +1 '}${esc(nameOf(L))}</div></div>
-    <div class="net"></div><div class="half b">${cboxHTML(g,R,'R',st,over)}${cboxHTML(g,R,'L',st,over)}<div class="kitchen"></div><div class="taphint">${over?'':'tap = +1 '}${esc(nameOf(R))}</div></div></div>
-    <div class="endsnote"><span>${ends&&isFinite(SWITCH_AT)?`⇄ Ends changed at ${SWITCH_AT}`:''}</span><button class="btn sm ${g.invert?'acc':''}" onclick="refInvert()">⇄ ${g.invert?'View flipped':'Flip my view'}</button></div>
-    <div class="ctrls">${[L,R].map(k=>`<div class="ctrlrow"><button class="rbtn" onclick="refMinus('${k}')" ${scoreOf(k)===0?'disabled':''}>−</button>
-      <div class="tl">${esc(nameOf(k))}</div><button class="rbtn plus" onclick="refPoint('${k}')" ${over?'disabled':''} style="background:${colOf(k)}">+</button></div>`).join('')}</div>
+  h+=`
     <div class="row" style="margin-bottom:10px"><button class="btn" onclick="refUndo()" ${fresh?'disabled':''}>↶ Undo last rally</button>
       <button class="btn dgr" onclick="refClear()">Clear</button><button class="btn acc" style="flex:1" onclick="refFinish()">Save &amp; close</button></div>
     <div class="card" style="padding:12px"><div class="eyebrow" style="margin-bottom:6px">Reading the court</div>
@@ -937,7 +968,7 @@ function TABS(){
 }
 function applyTheme(){ document.documentElement.setAttribute('data-theme',S.theme);
   const m=document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute('content',S.theme==='dark'?'#070b16':'#f6f7fb'); }
-function toggleTheme(){ S.theme=S.theme==='dark'?'light':'dark'; save(); render(); }
+function toggleTheme(){ S.theme=S.theme==='dark'?'light':'dark'; S.themeSet=true; save(); render(); }
 function go(t){ S.tab=t; save(); render(); window.scrollTo(0,0); }
 let modalOpen=false;
 function render(force){
@@ -991,12 +1022,16 @@ function autoHour(H){
   const open=H.find(h=>h.list.some(s=>s.games.some(g=>!played(g))));
   return (open||H[0]||{}).start||'';
 }
-function curHour(){ const H=hours(); return S.hour==='all'?'all':(H.some(h=>h.start===S.hour)?S.hour:autoHour(H)); }
+const courtNames = () => [...new Set(S.sessions.map(s=>s.court))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+function curHour(){ const H=hours(); if(S.hour==='all') return 'all';
+  if(String(S.hour||'').indexOf('c:')===0&&courtNames().indexOf(S.hour.slice(2))>=0) return S.hour;
+  return H.some(h=>h.start===S.hour)?S.hour:autoHour(H); }
+const listFor = sel => sel==='all'?sortedSessions():sel.indexOf('c:')===0?sortedSessions().filter(s=>s.court===sel.slice(2)):S.sessions.filter(s=>s.start===sel).sort((a,b)=>a.court.localeCompare(b.court,undefined,{numeric:true}));
 function modeBar(){
   if(!canScore()) return '';
   return `<div class="row" style="margin-bottom:12px">
-    <button class="chip ${S.mode==='entry'?'on':''}" onclick="S.mode='entry';save();render()">⌨ Score entry</button>
-    <button class="chip ${S.mode==='ref'?'on':''}" onclick="S.mode='ref';save();render()">🏓 Referee</button>
+    <button class="chip ${S.mode==='entry'?'on':''}" onclick="S.mode='entry';save();render()">⌨ Standard</button>
+    <button class="chip ${S.mode==='ref'?'on':''}" onclick="S.mode='ref';save();render()">🏓 Court console</button>
     <span class="note">${S.mode==='entry'?'Type the final score. Tab or Enter moves to the next box.':'Tap SCORE on a game to open the live court console.'}</span></div>`;
 }
 function exportBar(){
@@ -1013,14 +1048,17 @@ function vGames(){
   const sel=curHour();
   const chips=`<div class="chips">`+H.map(h=>{ let d=0,t=0; h.list.forEach(s=>s.games.forEach(g=>{t++; if(played(g)) d++;}));
     return `<div class="chip ${sel===h.start?'on':''}" onclick="S.hour='${h.start}';save();render()">${esc(range(h.list[0]))}<i>${d}/${t}</i></div>`; }).join('')+
-    `<div class="chip ${sel==='all'?'on':''}" onclick="S.hour='all';save();render()">Whole night</div></div>`;
-  const list=sel==='all'?sortedSessions():(H.find(h=>h.start===sel)||H[0]).list;
-  const addBar=isAdmin()?`<div class="row" style="margin-top:12px"><button class="btn sm acc" onclick="addSession('${sel==='all'?'':sel}')">+ Add a court${sel==='all'?'':' to this slot'}</button>
+    `<div class="chip ${sel==='all'?'on':''}" onclick="S.hour='all';save();render()">All games</div>`+
+    (courtNames().length>1?`<span class="chipSep"></span>`+courtNames().map(c=>{ let d=0,t=0; S.sessions.filter(s=>s.court===c).forEach(s=>s.games.forEach(g=>{t++; if(played(g)) d++;}));
+      return `<div class="chip ${sel==='c:'+c?'on':''}" data-h="${attr('c:'+c)}" onclick="S.hour=this.dataset.h;save();render()">${esc(c)}<i>${d}/${t}</i></div>`; }).join(''):'')+`</div>`;
+  const list=listFor(sel);
+  const slotSel=sel!=='all'&&sel.indexOf('c:')!==0;
+  const addBar=isAdmin()?`<div class="row" style="margin-top:12px"><button class="btn sm acc" onclick="addSession('${slotSel?sel:''}')">+ Add a court${slotSel?' to this slot':''}</button>
     <button class="btn sm" onclick="addSlot()">+ Add a slot</button>
     <span class="note" style="align-self:center">✎ Players on a court moves, swaps, adds or removes people.</span></div>`:'';
   return chips+modeBar()+oddBanner()+exportBar()+`<div class="grid g2">`+list.map(sessionCard).join('')+`</div>`+addBar+`
-    <p class="note" style="margin-top:12px">Each card is one court for one hour. The rotation gives everyone the same number of games and changes
-    partners every game; with five players the first five games are a full round. Times are a guide at ~${S.slotMins} min a game.
+    <p class="note" style="margin-top:12px">Each card is one court and its group. One round has everyone partner and play against everyone at least once,
+    nobody playing or waiting more than two games running where the numbers allow. Times are a guide at ~${S.slotMins} min a game.
     Tap a name for that player's night.</p>`;
 }
 function sessionCounts(s){
@@ -1039,6 +1077,7 @@ function sessionCard(s){
       <div class="hdBtns">${s.games.length?(cur?`<span class="liveTag">● Game ${cur.n} on court</span>`:`<button class="doneTag" onclick="toggleOpen('${s.id}')">✓ All played ${open?'▾':'▸'}</button>`):''}
       ${canEdit()?`<button class="btn sm editBtn" onclick="go('groups')">✎ Players</button>`:''}</div></div>
     <div class="pchips">${s.players.map(p=>`<span class="pc" data-p="${attr(p)}" onclick="openPlayer(this.dataset.p)">${esc(p)}<i>${cnt[p].p}G · ${cnt[p].sat}S</i></span>`).join('')}</div>
+    ${open?repeatSummary(s):''}
     ${s.players.length<4?`<div class="folded">Needs at least 4 players for doubles${canEdit()?` — <a href="#" onclick="go('groups');return false">add names on Groups</a>`:''}.</div>`:''}
     ${open?s.games.map((g,i)=>roundMark(s,i)+gameRow(s,g,i,g===cur)).join(''):`<div class="folded">Every game played — tap “All played” to show the scores.</div>`}
     ${canScore()&&open?`<div class="sessFt">
@@ -1047,6 +1086,18 @@ function sessionCard(s){
       ${last&&!touched(last)?`<button class="btn sm" onclick="removeLast('${s.id}')">Remove last game</button>`:''}
       <span class="note" style="align-self:center">Time left? The round starts again from its first game.</span></div>`:''}
   </div>`;
+}
+/* how many times this pair has already partnered in the same round (or the
+   whole court when it is not running a set round) — 0 means first time */
+function segStart(s,i){ const R=roundInfo(s); if(!R||i<R.base) return 0; return R.base+Math.floor((i-R.base)/R.len)*R.len; }
+function pairBefore(s,i,team){ const k=pairKey(team[0],team[1]), st=segStart(s,i); let n=0;
+  for(let j=st;j<i;j++){ const g=s.games[j]; if(pairKey(g.a[0],g.a[1])===k||pairKey(g.b[0],g.b[1])===k) n++; } return n; }
+const ORD=['','','2nd','3rd','4th','5th','6th'];
+function repeatSummary(s){
+  const seen={}, out=[]; s.games.forEach((g,i)=>[g.a,g.b].forEach(t=>{ const n=pairBefore(s,i,t); if(n){ const k=pairKey(t[0],t[1]);
+    if(!seen[k]){ seen[k]=1; const first=s.games.findIndex((x,j)=>j>=segStart(s,i)&&(pairKey(x.a[0],x.a[1])===k||pairKey(x.b[0],x.b[1])===k));
+      out.push(esc(t.join(' & '))+' <span class="dimtxt">G'+(first+1)+' &amp; G'+(i+1)+'</span>'); } } }));
+  return out.length?`<div class="rptSum"><b>Partners twice${roundInfo(s)?' in a round':''}:</b> ${out.join(' · ')}</div>`:'';
 }
 function roundMark(s,i){
   const R=roundInfo(s);
@@ -1057,6 +1108,7 @@ function roundMark(s,i){
   if(k===0&&!multi) return '';
   return `<div class="rdMark">Round ${k+1}${k?' — the same games again':` · ${R.len} games — everyone partners and plays against everyone`}</div>`;
 }
+const rpt=(s,i,t)=>{ const n=pairBefore(s,i,t); return n?`<span class="rpt">↻ together ${ORD[n+1]||(n+1)+'th'} time</span>`:''; };
 function gameRow(s,g,i,isNow){
   const entry=canScore()&&S.mode==='entry', p=played(g), wa=p&&g.sa>g.sb, wb=p&&g.sb>g.sa, odd=oddScore(g);
   const box=f=>`<input class="sc ${g[f]!=null?'filled':''} ${odd?'odd':''}" inputmode="numeric" data-k="${s.id}:${g.n}:${f}"
@@ -1065,9 +1117,9 @@ function gameRow(s,g,i,isNow){
   return `<div class="grow ${isNow?'now':''}">
     <div class="gno"><b>G${g.n}</b><span>${gameTime(s,i)}</span></div>
     <div class="gbody"><div class="gline">
-      <div class="side ${wa?'w':p?'l':''}">${g.a.map(x=>`<span class="nm">${esc(x)}</span>`).join('')}</div>
+      <div class="side ${wa?'w':p?'l':''}">${g.a.map(x=>`<span class="nm">${esc(x)}</span>`).join('')}${rpt(s,i,g.a)}</div>
       ${live}${box('sa')}<span class="sep">–</span>${box('sb')}
-      <div class="side b ${wb?'w':p?'l':''}">${g.b.map(x=>`<span class="nm">${esc(x)}</span>`).join('')}</div>
+      <div class="side b ${wb?'w':p?'l':''}">${g.b.map(x=>`<span class="nm">${esc(x)}</span>`).join('')}${rpt(s,i,g.b)}</div>
       ${canScore()&&S.mode==='ref'?`<button class="refbtn" onclick="openRef('${s.id}:${g.n}')">SCORE</button>`:''}</div>
       ${g.sit.length?`<div class="sit">Sitting out: <b>${g.sit.map(esc).join(', ')}</b></div>`:''}
       ${odd?`<div class="oddWarn">⚠ ${g.sa}–${g.sb} is not a finished game (${esc(rulesShort())}) — check the score</div>`:''}
@@ -1165,6 +1217,7 @@ function vGroups(){
         ${ed?`<div class="edRow"><div class="ix">+</div><input class="txt" id="np_${s.id}" placeholder="Add names — commas for several"
             onkeydown="if(event.key==='Enter')addPlayer('${s.id}')"><button class="btn sm acc" onclick="addPlayer('${s.id}')">Add</button></div>`:''}
         ${s.players.length<4?`<div class="note" style="color:var(--gold)">Needs at least 4 players.</div>`:''}
+        ${s.players.length>10?`<div class="note" style="color:var(--gold)">More than 10 on one court means long waits and some repeated games — split them across two courts.</div>`:''}
         ${ed?`<div class="row" style="margin-top:8px">${S.sessions.length>1&&s.players.length?`<button class="btn sm" onclick="openCourt('${s.id}')">Move or swap…</button>`:''}
             ${s.players.length>=4?`<button class="btn sm" onclick="rebuild('${s.id}')">Re-deal unplayed games</button>`:''}</div>
           <p class="hint">${scored} of ${s.games.length} games scored.</p>`:''}
@@ -1220,7 +1273,7 @@ function highlights(st){
 }
 function vStats(){
   const sel=sessById(S.statSel)?S.statSel:'', st=computeStats(sel);
-  const chips=`<div class="chips"><div class="chip ${!sel?'on':''}" onclick="S.statSel='';save();render()">Whole night</div>`+
+  const chips=`<div class="chips"><div class="chip ${!sel?'on':''}" onclick="S.statSel='';save();render()">All games</div>`+
     sortedSessions().map(s=>`<div class="chip ${sel===s.id?'on':''}" onclick="S.statSel='${s.id}';save();render()">${esc(range(s))} · ${esc(s.court)}</div>`).join('')+`</div>`;
   const bits=[];
   if(canShare()) bits.push(`<button class="btn sm acc" onclick="openModal(imageMenu())">🖼 Share as image…</button>`,
@@ -1233,13 +1286,13 @@ function vStats(){
   return chips+bar+hl+`<div class="grid g2">${leaderCard(st,sel)}${pairCard(st)}</div>${recentCard(st)}`;
 }
 function leaderCard(st,sel){
-  return `<div class="card"><div class="hd"><b>${sel?'Standings · '+esc(sessName(sessById(sel))):'Leaderboard · whole night'}</b><span>Win % · diff · points</span></div>
-    <div class="tblWrap"><table><thead><tr><th>Player</th><th>P</th><th>W</th><th>L</th><th>Win%</th><th>Diff</th><th>Pts</th><th>Form</th></tr></thead><tbody>
+  return `<div class="card"><div class="hd"><b>${sel?'Standings · '+esc(sessName(sessById(sel))):'Leaderboard · all games'}</b><span>Win % · diff · points won</span></div>
+    <div class="tblWrap"><table><thead><tr><th>Player</th><th>P</th><th>W</th><th>L</th><th>Win%</th><th title="Points won">+</th><th title="Points lost">−</th><th>Diff</th><th>Form</th></tr></thead><tbody>
     ${st.rows.map(r=>`<tr><td class="name">${rkHTML(r)}<span class="lk" data-p="${attr(r.name)}" onclick="openPlayer(this.dataset.p)">${esc(r.name)}</span></td>
-      <td>${r.p}</td><td>${r.w}</td><td>${r.l}</td><td><b>${pctTxt(r)}</b></td><td class="${r.d>0?'pos':r.d<0?'neg':''}">${sgn(r.d)}</td><td>${r.pf}</td>
+      <td>${r.p}</td><td>${r.w}</td><td>${r.l}</td><td><b>${pctTxt(r)}</b></td><td>${r.pf}</td><td>${r.pa}</td><td class="${r.d>0?'pos':r.d<0?'neg':''}"><b>${sgn(r.d)}</b></td>
       <td><span class="form">${r.form.slice(-5).map(f=>`<i class="${f}">${f}</i>`).join('')}</span></td></tr>`).join('')}
     </tbody></table></div>
-    <p class="note" style="padding:0 12px 12px;margin:0">Ranked by win percentage, then point difference, then points scored — so a court that fits in an extra game does not tilt the table.</p></div>`;
+    <p class="note" style="padding:0 12px 12px;margin:0"><b>+</b> points won · <b>−</b> points lost · <b>Diff</b> = + minus −. Ranked by win percentage, then difference, then points won — so a court that fits in an extra game does not tilt the table.</p></div>`;
 }
 function pairCard(st){
   const list=S.pairAll?st.pairs:st.pairs.slice(0,10);
@@ -1263,7 +1316,7 @@ function openPlayer(name){
   openModal(`<h3>${esc(name)}</h3><p class="hint">${rkHTML(r)}${r.rank?'Place '+r.rank+' tonight':'No results yet'} · ${night.filter(x=>x.sits).length} sit-out${night.filter(x=>x.sits).length===1?'':'s'} in the rotation</p>
     <div class="statbox"><div><b>${r.p}</b><span>Played</span></div><div><b>${r.w}–${r.l}</b><span>W–L</span></div>
       <div><b>${pctTxt(r)}</b><span>Win %</span></div><div><b class="${r.d>0?'pos':r.d<0?'neg':''}">${sgn(r.d)}</b><span>Diff</span></div></div>
-    <div class="statbox" style="margin-top:0"><div><b>${r.pf}</b><span>Pts for</span></div><div><b>${r.pa}</b><span>Pts against</span></div>
+    <div class="statbox" style="margin-top:0"><div><b>${r.pf}</b><span>Points won (+)</span></div><div><b>${r.pa}</b><span>Points lost (−)</span></div>
       <div><b>${r.best}</b><span>Best run</span></div><div><b>${r.p?(r.pf/r.p).toFixed(1):'–'}</b><span>Pts / game</span></div></div>
     <div class="eyebrow" style="margin-top:14px">Tonight's games</div>`+tbl('<th>Game</th><th class="l">With / against</th><th>Score</th>',
       night.map(x=>{ const p=played(x.g);
@@ -1377,7 +1430,7 @@ function setupSlots(){
   return `<div class="card ed" style="margin-bottom:12px"><div class="hd" style="padding:0 0 4px"><b>Slots</b><span>${st.length} slot${st.length===1?'':'s'}</span></div>
     <p class="note" style="margin:0 0 10px"><b>Court</b> = one court with its own group of players and its own rotation of games.
       <b>Slot</b> = a time block — all the courts that start at the same time (8 PM: Court 1 &amp; Court 2). Slots are the tabs along the top of the Games page.
-      Use one slot for the whole night if the same players stay on the same court; add a slot when the groups change part-way through.</p>
+      Use one slot for the whole session if the same players stay on the same court; add a slot when the groups change part-way through.</p>
     <label class="fl">Call each slot by</label>
     <div class="row" style="margin-bottom:6px"><button class="btn sm ${mode==='time'?'acc':''}" onclick="setSlotMode('time')">Its time · ${esc(st[0]?timeRange(S.sessions.find(s=>s.start===st[0])):'8 – 9 PM')}</button>
       <button class="btn sm ${mode==='slot'?'acc':''}" onclick="setSlotMode('slot')">Number · Slot 1, Slot 2 …</button></div>
@@ -1414,7 +1467,7 @@ function setupCourts(){
   let h=`<div class="card ed" style="margin-bottom:12px"><div class="hd" style="padding:0 0 4px"><b>Courts &amp; times</b><span>${L.length} court${L.length===1?'':'s'}</span></div>
     <p class="note" style="margin:0 0 10px">Each court has its own group of players and its own games. The games come from the number of players:
     <b>one round</b> is the fewest games in which everyone partners everyone at least once and plays against everyone at least once —
-    4 players 3 games, 5 → 5, 6 → 9, 7 → 11, 8 → 14, 9 → 18, 10 → 23. If there is time the round repeats. Start time and minutes are only a guide.
+    4 players 3 games, 5 → 5, 6 → 9, 7 → 11, 8 → 14, 9 → 18, 10 → 25. Nobody plays or waits more than 2 games in a row (3 at most where the numbers force it). If there is time the round repeats. Start time and minutes are only a guide.
     Player names are added on the <b>Groups</b> tab.</p>`;
   L.forEach((s,k)=>{ const scored=s.games.filter(touched).length;
     h+=`<div class="crtRow">
@@ -1657,7 +1710,7 @@ function shareText(scope){
     sortedSessions().forEach(s=>{ t+=`\n*${s.court} · ${range(s)}*\n`;
       s.games.forEach((g,i)=>{ t+=`${showTimes()?gameTime(s,i):'G'+g.n} ${g.a.join(' & ')} v ${g.b.join(' & ')}${g.sit.length?' _(sits: '+g.sit.join(', ')+')_':''}\n`; }); });
   } else {
-    const h=scope.slice(2), list=h==='all'?sortedSessions():S.sessions.filter(s=>s.start===h);
+    const list=listFor(scope.slice(2));
     list.forEach(s=>{ t+=`\n*${s.court} · ${range(s)}*\n`;
       s.games.forEach(g=>{ t+=played(g)?`G${g.n} ${g.a.join(' & ')} ${g.sa}-${g.sb} ${g.b.join(' & ')}\n`:`G${g.n} ${g.a.join(' & ')} v ${g.b.join(' & ')}\n`; }); });
   }
@@ -1672,9 +1725,10 @@ function shareModal(scope){
   if(!canShare()){ toast('Not allowed on this device'); return ''; }
   if(scope==='g:all'||!scope) scope=scope||'stand';
   const opts=[['stand','Leaderboard & highlights'],['sched','Who plays when (schedule)']]
-    .concat(hours().map(h=>['g:'+h.start,'Results · '+range(h.list[0])])).concat([['g:all','Results · whole night']]);
+    .concat(hours().map(h=>['g:'+h.start,'Results · '+range(h.list[0])])).concat([['g:all','Results · all games']])
+    .concat(courtNames().length>1?courtNames().map(c=>['g:c:'+c,'Results · '+c]):[]);
   return `<h3>Share on WhatsApp</h3><p class="hint">Sends it as a message anyone can read in the chat.</p>
-    <label class="fl">What to include</label><select onchange="openModal(shareModal(this.value))">${opts.map(([v,l])=>`<option value="${v}"${v===scope?' selected':''}>${esc(l)}</option>`).join('')}</select>
+    <label class="fl">What to include</label><select onchange="openModal(shareModal(this.value))">${opts.map(([v,l])=>`<option value="${attr(v)}"${v===scope?' selected':''}>${esc(l)}</option>`).join('')}</select>
     <textarea id="shareTxt" class="shareBox" readonly>${esc(shareText(scope))}</textarea>
     <div class="row" style="margin-top:12px"><button class="btn acc" style="flex:1" onclick="window.open('https://wa.me/?text='+encodeURIComponent($('shareTxt').value),'_blank')">Send on WhatsApp</button>
       ${navigator.share?`<button class="btn" onclick="navigator.share({title:S.meta.title,text:$('shareTxt').value}).catch(()=>{})">Share…</button>`:''}
@@ -1687,7 +1741,7 @@ function exportCSV(){
   const rows=[['Hour','Court','Game','Time','Team A','Score A','Score B','Team B','Sitting out','Winner']];
   sortedSessions().forEach(s=>s.games.forEach((g,i)=>rows.push([range(s),s.court,'G'+g.n,gameTime(s,i),g.a.join(' & '),g.sa==null?'':g.sa,g.sb==null?'':g.sb,
     g.b.join(' & '),g.sit.join(', '),played(g)?(g.sa>g.sb?g.a:g.b).join(' & '):''])));
-  rows.push([]); rows.push(['Standings']); rows.push(['Rank','Player','Played','Won','Lost','Win %','For','Against','Diff']);
+  rows.push([]); rows.push(['Standings']); rows.push(['Rank','Player','Played','Won','Lost','Win %','Points won (+)','Points lost (-)','Diff']);
   computeStats('').rows.forEach(r=>rows.push([r.rank,r.name,r.p,r.w,r.l,pctTxt(r),r.pf,r.pa,r.d]));
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['﻿'+rows.map(r=>r.map(q).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}));
   a.download='community-games-'+new Date().toISOString().slice(0,10)+'.csv'; a.click(); toast('Spreadsheet exported');
@@ -1746,14 +1800,14 @@ function fiGrid(ctx,y,ties){ const L=IMG_PAD, R=IMG_W-IMG_PAD, gap=24, w=(R-L-ga
 function standingsBody(sid){
   return (ctx,y)=>{ const st=computeStats(sid), L=IMG_PAD, R=IMG_W-IMG_PAD, rowH=52;
     y=fiHead(ctx,y,sid?sessName(sessById(sid)):'Leaderboard',st.log.length+' game'+(st.log.length===1?'':'s')+' played');
-    const cols=[['P',60],['W',60],['L',60],['WIN%',86],['DIFF',86],['PTS',74]], fixed=cols.reduce((s,c)=>s+c[1],0), teamW=R-L-64-fixed;
+    const cols=[['P',54],['W',54],['L',54],['WIN%',84],['+',62],['−',62],['DIFF',80]], fixed=cols.reduce((s,c)=>s+c[1],0), teamW=R-L-64-fixed;
     ctx.fillStyle=HEAD_FILL; ctx.fillRect(L,y,R-L,40); ctx.font=ifont(13.5,800); ctx.fillStyle='#475569';
     imgMid(ctx,'#',L+32,y+26); ctx.fillText('PLAYER',L+64,y+26); let cx=L+64+teamW; cols.forEach(([l,w])=>{ imgMid(ctx,l,cx+w/2,y+26); cx+=w; }); y+=40;
     st.rows.forEach((r,i)=>{ ctx.fillStyle=i%2?'#f8fafc':IMG_PAPER; ctx.fillRect(L,y,R-L,rowH); const mid=y+rowH/2;
       medalDot(ctx,L+32,mid,r.p?r.rank:0,15);
       ctx.font=ifont(22,r.rank&&r.rank<=3?800:600); ctx.fillStyle=r.p?IMG_INK:IMG_MUTED; ctx.fillText(fitText(ctx,r.name,teamW-12),L+64,mid+8);
-      let c=L+64+teamW; [r.p,r.w,r.l,pctTxt(r),sgn(r.d),r.pf].forEach((v,k)=>{ ctx.font=ifont(21,k===3||k===4?800:500);
-        ctx.fillStyle=k===4?(r.d>0?WIN_COL:r.d<0?'#be123c':IMG_INK):IMG_INK; imgMid(ctx,String(v),c+cols[k][1]/2,mid+7); c+=cols[k][1]; });
+      let c=L+64+teamW; [r.p,r.w,r.l,pctTxt(r),r.pf,r.pa,sgn(r.d)].forEach((v,k)=>{ ctx.font=ifont(21,k===3||k===6?800:500);
+        ctx.fillStyle=k===6?(r.d>0?WIN_COL:r.d<0?'#be123c':IMG_INK):IMG_INK; imgMid(ctx,String(v),c+cols[k][1]/2,mid+7); c+=cols[k][1]; });
       imgRule(ctx,L,y+rowH,R,'#e2e8f0'); y+=rowH; });
     imgRule(ctx,L,y,R,'#94a3b8'); y+=34;
     if(st.pairs.length){ y=fiHead(ctx,y,'Best partnerships',''); st.pairs.slice(0,6).forEach((p,i)=>{
@@ -1784,7 +1838,7 @@ async function makeImage(label,body){
     const sub=[S.meta.sub,S.meta.venue,organiserLine()?'Organised by '+organiserLine():''].filter(Boolean).join(' · ');
     if(sub){ ctx.font=ifont(20,400); ctx.fillStyle=IMG_MUTED; ctx.fillText(fitText(ctx,sub,R-L),L,y+20); }
     return y+60; };
-  const foot=(ctx,y)=>{ ctx.font=ifont(15,400); ctx.fillStyle=IMG_MUTED; ctx.fillText('Games '+rulesShort()+' · ranked by win %, then point difference, then points',L,y+12); y+=30;
+  const foot=(ctx,y)=>{ ctx.font=ifont(15,400); ctx.fillStyle=IMG_MUTED; ctx.fillText('Games '+rulesShort()+' · ranked by win %, then difference, then points won · + won · − lost',L,y+12); y+=30;
     if(shownSponsors().length){ let sx=L; ctx.font=ifont(13,700); ctx.fillStyle=IMG_MUTED; const lb=shownSponsors().length===1?'SPONSOR':'SPONSORS';
       ctx.fillText(lb,sx,y+22); sx+=ctx.measureText(lb).width+18;
       shownSponsors().forEach((o,i)=>{ const im=sponIm[i]; if(im){ const wid=Math.min(110,im.width*(28/im.height)); ctx.drawImage(im,sx,y+2,wid,28); sx+=wid+16; }
@@ -1811,18 +1865,18 @@ function imageMenu(){
   const btn=(k,l,s)=>`<button class="imgOpt" onclick="closeModal();shareImage('${k}')"><b>${esc(l)}</b>${s?`<span>${esc(s)}</span>`:''}</button>`;
   return `<h3>Share as image</h3><p class="hint">Pick what to send. On a phone it opens the share sheet, so it goes straight into WhatsApp.</p>
     <div class="eyebrow" style="margin:14px 2px 8px">Standings</div><div class="imgGrid">
-      ${btn('st:','Whole night','leaderboard, best pairs, highlights')}
+      ${btn('st:','All games','leaderboard, best pairs, highlights')}
       ${sortedSessions().map(s=>btn('st:'+s.id,s.court+' · '+range(s),'that court only')).join('')}</div>
     <div class="eyebrow" style="margin:14px 2px 8px">Games &amp; scores</div><div class="imgGrid">
       ${hours().map(h=>btn('g:'+h.start,range(h.list[0]),h.list.map(s=>s.court).join(' & '))).join('')}
-      ${btn('g:all','Whole night','every court, every game')}</div>
+      ${btn('g:all','All games','every court, every game')}</div>
     <div class="row" style="margin-top:16px"><button class="btn" style="flex:1" onclick="closeModal()">Close</button></div>`;
 }
 async function shareImage(key){
   if(!canShare()) return; toast('Drawing the image…');
   try{ if(document.fonts&&document.fonts.ready) await document.fonts.ready;
     const st=key.startsWith('st:'), v=key.slice(st?3:2);
-    const label=st?(v?sessName(sessById(v)):'Standings'):(v==='all'?'Games · whole night':'Games · '+range(hours().find(h=>h.start===v).list[0]));
+    const label=st?(v?sessName(sessById(v)):'Standings'):(v==='all'?'All games':'Games · '+range(hours().find(h=>h.start===v).list[0]));
     const cv=await makeImage(st?'Standings':'Games',st?standingsBody(v):gamesBody(v));
     const slug=s=>String(s||'').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'-');
     await shareCanvas(cv,slug(S.meta.title)+'-'+slug(label)+'.png',S.meta.title+' · '+label);
@@ -1840,14 +1894,18 @@ function printFoot(legend){ const sp=shownSponsors();
     ${sp.map(o=>`<span class="pitem">${orgLogo(o)?`<img src="${orgLogo(o)}" alt="">`:''}${o.name?esc(o.name):''}</span>`).join('')}</div>`:''}
     <div class="foot"><img src="${orgLogo(HOST())}" alt=""><b>${esc(hostName())}</b>${hostPhone()?' · '+esc(hostPhone()):''}</div>`; }
 function printSchedule(withData){
-  return hours().map(h=>`<div class="pg">${printHead('Games · '+range(h.list[0]),rulesShort())}`+
-    h.list.map(s=>`<h4>${esc(s.court)} <span>· ${esc(s.players.join(', '))}</span></h4><table>
-      <tr><th class="n">G</th><th class="tm">Time</th><th>Team</th><th class="sc">Score</th><th class="sc">Score</th><th>Team</th><th class="st">Sitting out</th></tr>
-      ${s.games.map((g,i)=>{ const p=withData&&played(g); return `<tr><td class="n">${g.n}</td><td class="tm">${gameTime(s,i)}</td>
-        <td class="${p&&g.sa>g.sb?'w':''}">${esc(g.a.join(' & '))}</td><td class="sc">${p?g.sa:''}</td><td class="sc">${p?g.sb:''}</td>
-        <td class="${p&&g.sb>g.sa?'w':''}">${esc(g.b.join(' & '))}</td><td class="st">${esc(g.sit.join(', '))}</td></tr>`; }).join('')}
-      ${[1,2].map(k=>`<tr><td class="n">${s.games.length+k}</td><td class="tm"></td><td></td><td></td><td></td><td></td><td></td></tr>`).join('')}</table>`).join('')+
-    printFoot('Spare rows are for extra games if there is time.')+`</div>`).join('');
+  // one court per sheet, so each court's referee gets their own page
+  return sortedSessions().filter(s=>s.games.length||s.players.length).map(s=>{ const R=roundInfo(s);
+    return `<div class="pg">${printHead(s.court+' · '+range(s),rulesShort())}
+    <h4>${esc(s.court)} <span>· ${esc(s.players.join(', '))}</span></h4><table>
+      <tr><th class="n">G</th><th class="tm">${showTimes()?'Time':''}</th><th>Team</th><th class="sc">Score</th><th class="sc">Score</th><th>Team</th><th class="st">Sitting out</th></tr>
+      ${s.games.map((g,i)=>{ const p=withData&&played(g), ra=pairBefore(s,i,g.a), rb=pairBefore(s,i,g.b);
+        const head=R&&i>=R.base&&(i-R.base)%R.len===0&&(s.games.length-R.base>R.len)?`<tr class="rd"><td colspan="7">Round ${(i-R.base)/R.len+1}${i>R.base?' — the same games again':''}</td></tr>`:'';
+        return head+`<tr><td class="n">${g.n}</td><td class="tm">${gameTime(s,i)}</td>
+        <td class="${p&&g.sa>g.sb?'w':''}">${esc(g.a.join(' & '))}${ra?' <i class="rp">↻</i>':''}</td><td class="sc">${p?g.sa:''}</td><td class="sc">${p?g.sb:''}</td>
+        <td class="${p&&g.sb>g.sa?'w':''}">${esc(g.b.join(' & '))}${rb?' <i class="rp">↻</i>':''}</td><td class="st">${esc(g.sit.join(', '))}</td></tr>`; }).join('')}
+      ${[1,2].map(k=>`<tr><td class="n">${s.games.length+k}</td><td class="tm"></td><td></td><td></td><td></td><td></td><td></td></tr>`).join('')}</table>
+    ${printFoot('↻ = this pair partnered earlier in the round. Spare rows are for extra games if there is time.')}</div>`; }).join('');
 }
 function slotHead(t){ for(const s of sortedSessions()){ const i=s.games.findIndex((g,j)=>gameMin(s,j)===t); if(i>=0) return range(s)+' · G'+(i+1); } return ''; }
 function printPlayers(){
@@ -1862,13 +1920,13 @@ function printPlayers(){
     ${printFoot('C1, C2 … is the court; “w/” is the partner for that game; “sits” means sitting out on that court.')}</div>`;
 }
 function printStandings(){ const st=computeStats('');
-  return `<div class="pg">${printHead('Standings','whole night')}<table>
-    <tr><th class="n">#</th><th>Player</th><th class="sc">P</th><th class="sc">W</th><th class="sc">L</th><th class="sc">Win%</th><th class="sc">Diff</th><th class="sc">Pts</th></tr>
+  return `<div class="pg">${printHead('Standings','all games')}<table>
+    <tr><th class="n">#</th><th>Player</th><th class="sc">P</th><th class="sc">W</th><th class="sc">L</th><th class="sc">Win%</th><th class="sc">+</th><th class="sc">−</th><th class="sc">Diff</th></tr>
     ${st.rows.map(r=>`<tr><td class="n">${r.rank}</td><td>${esc(r.name)}</td><td class="sc">${r.p}</td><td class="sc">${r.w}</td><td class="sc">${r.l}</td>
-      <td class="sc">${pctTxt(r)}</td><td class="sc">${sgn(r.d)}</td><td class="sc">${r.pf}</td></tr>`).join('')}</table>
+      <td class="sc">${pctTxt(r)}</td><td class="sc">${r.pf}</td><td class="sc">${r.pa}</td><td class="sc">${sgn(r.d)}</td></tr>`).join('')}</table>
     <h4>Partnerships</h4><table><tr><th>Pair</th><th class="sc">P</th><th class="sc">W</th><th class="sc">L</th><th class="sc">Diff</th></tr>
     ${st.pairs.map(p=>`<tr><td>${esc(p.names.join(' & '))}</td><td class="sc">${p.p}</td><td class="sc">${p.w}</td><td class="sc">${p.l}</td><td class="sc">${sgn(p.d)}</td></tr>`).join('')}</table>
-    ${printFoot('Ranked by win percentage, then point difference, then points scored.')}</div>`; }
+    ${printFoot('+ points won · − points lost · Diff = + minus −. Ranked by win percentage, then difference, then points won.')}</div>`; }
 function doPrint(kind){ if(!canExport()) return toast('Not allowed on this device');
   $('printArea').innerHTML=kind==='stand'?printStandings():kind==='players'?printPlayers():printSchedule(kind==='data'); window.print(); }
 
