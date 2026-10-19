@@ -429,7 +429,7 @@ a.tel{color:var(--accent);font-weight:700;text-decoration:none}
    of the other four once. "Add a game" carries on; exact combinations repeat
    only once the fresh ones have run out.
    ===================================================================== */
-const BUILD = 'community build 2026-10-19f';
+const BUILD = 'community build 2026-10-20b';
 const ADMIN_DEFAULT = 'Hello43556';
 const ORGANISER = 'RISE Sports';
 const CONTACT = '9987029222';
@@ -587,7 +587,8 @@ const freshGame = g => ({a:g.a.slice(),b:g.b.slice(),sit:g.sit.slice(),sa:null,s
      5. everyone plays against everyone at least once;
      6. a pair that has to partner twice is spread apart, and marked on the
         Games tab so nobody is surprised.
-   Rules 4 and 6 hold across the join too, so the round can simply repeat.
+   Later rounds keep the same shape but re-deal the names (see roundFor), so
+   pairs that already partnered most are kept apart and no game repeats.
    Worked out in advance (characters are places in the group list, a = 10th;
    13v24 = 1st & 3rd v 2nd & 4th):
      4 →  3 games · 3 each · everyone plays every game
@@ -620,16 +621,66 @@ function roundLen(players){
 const rosterKey = s => s.players.filter(Boolean).join('|');
 /* the next games: carry on round after round while the games so far follow the
    round; otherwise (an older night, or 9+ players) fall back to the rotation */
+/* Round 2, 3 … keep the same shape (everyone partners everyone, equal games,
+   short streaks) but are re-dealt over the names, so the pairs that already
+   partnered twice are not put together again first, no game is played again
+   with the same four in the same pairs, and nobody gets a long streak where
+   one round runs into the next. The choice depends only on the names and the
+   games already dealt, so every phone deals the same next round. */
+const roundCache=new Map();
+function* perms(n){ const a=[...Array(n).keys()]; yield a.slice(); const c=Array(n).fill(0); let i=0;
+  while(i<n){ if(c[i]<i){ const k=i%2?c[i]:0; [a[k],a[i]]=[a[i],a[k]]; yield a.slice(); c[i]++; i=0; } else { c[i]=0; i++; } } }
+function seededPerms(n,count){ let x=2463534242; const rnd=()=>{ x^=x<<13; x>>>=0; x^=x>>>17; x^=x<<5; x>>>=0; return x/4294967296; };
+  const out=[[...Array(n).keys()]]; for(let k=0;k<count;k++){ const a=[...Array(n).keys()]; for(let i=n-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } out.push(a); } return out; }
+function roundFor(P,r,hist){
+  const R0=roundOf(P); if(!r||!R0) return R0;
+  const key=P.join('|')+'#'+hist.map(matchKey).join(',');
+  if(roundCache.has(key)) return roundCache.get(key);
+  const part={}, opp={}, seen={}, run={};
+  hist.forEach(g=>{ [g.a,g.b].forEach(t=>{ const k=pairKey(t[0],t[1]); part[k]=(part[k]||0)+1; });
+    g.a.forEach(x=>g.b.forEach(y=>{ const k=pairKey(x,y); opp[k]=(opp[k]||0)+1; })); seen[matchKey(g)]=1; });
+  P.forEach(p=>{ let v=0; for(let i=hist.length-1;i>=0;i--){ const on=hist[i].a.indexOf(p)>=0||hist[i].b.indexOf(p)>=0;
+    if(v===0) v=on?1:-1; else if((v>0)===on) v+=on?1:-1; else break; } run[p]=v; });
+  const pat0=ROUNDS[P.length].split(' ').map(t=>t.split('v').map(x=>[...x].map(d=>parseInt(d,36)-1)));
+  const list=P.length<=7?perms(P.length):seededPerms(P.length,P.length===8?6000:3000);
+  let best=null, bestC=Infinity; const lim=P.length===5?4:2;   // 5 players: one rests per game, so 4 in a row is the floor
+  let bestRev=false;
+  for(const pm of list) for(const rev of [false,true]){      // the round may also be played back to front
+    const pat=rev?pat0.slice().reverse():pat0;
+    let c=0; const pp=Object.assign({},part), rr=Object.assign({},run);
+    for(let gi=0;gi<pat.length;gi++){
+      const A=pat[gi][0].map(i=>P[pm[i]]), B=pat[gi][1].map(i=>P[pm[i]]);
+      const g={a:A,b:B}; if(seen[matchKey(g)]) c+=2500;
+      [A,B].forEach(t=>{ const k=pairKey(t[0],t[1]); pp[k]=(pp[k]||0)+1; c+=pp[k]*pp[k]*10; });
+      A.forEach(x=>B.forEach(y=>{ c+=(opp[pairKey(x,y)]||0); }));
+      if(gi<4) P.forEach(p=>{ const on=A.indexOf(p)>=0||B.indexOf(p)>=0, v=rr[p]||0;
+        const nv=on?(v>0?v+1:1):(v<0?v-1:-1); rr[p]=nv;
+        if(nv===lim+1||nv===-3) c+=600; else if(nv>lim+1||nv<-3) c+=3000; });
+      if(c>=bestC) break;
+    }
+    if(c<bestC){ bestC=c; best=pm.slice(); bestRev=rev; }
+  }
+  let out=roundOf(best.map(i=>P[i])); if(bestRev) out=out.slice().reverse(); roundCache.set(key,out); return out;
+}
+function expectedAt(s,idx,games){            // idx counts from where the current group started
+  const P=s.players.filter(Boolean), R0=roundOf(P), base=s.base||0, r=Math.floor(idx/R0.length);
+  return roundFor(P,r,games.slice(base,base+r*R0.length))[idx%R0.length];
+}
+const followsRounds = (s,games) => { const base=s.base||0, tail=games.slice(base);
+  return games.length>=base&&tail.every((g,i)=>matchKey(g)===matchKey(expectedAt(s,i,games))); };
 function dealNext(s,existing,count){
   if(count<=0) return [];
-  const R=roundOf(s.players), base=s.base||0, tail=existing.slice(base);
-  if(R&&existing.length>=base&&tail.every((g,i)=>matchKey(g)===matchKey(R[i%R.length])))
-    return Array.from({length:count},(_,k)=>freshGame(R[(tail.length+k)%R.length]));
+  const base=s.base||0;
+  if(roundOf(s.players)&&followsRounds(s,existing)){
+    const arr=existing.slice(), out=[];
+    for(let k=0;k<count;k++){ const g=freshGame(expectedAt(s,arr.length-base,arr)); arr.push(g); out.push(g); }
+    return out;
+  }
   return planGames(s.players,existing,count).map(freshGame);
 }
 function roundInfo(s){
-  const R=roundOf(s.players), base=s.base||0, tail=s.games.slice(base);
-  if(!R||!tail.length||!tail.every((g,i)=>matchKey(g)===matchKey(R[i%R.length]))) return null;
+  const R=roundOf(s.players), base=s.base||0;
+  if(!R||s.games.length<=base||!followsRounds(s,s.games)) return null;
   return {len:R.length,base};
 }
 function replan(s){
@@ -695,11 +746,13 @@ const ACCESS_DEFAULT = {
   tabs:{ view:{games:true,stats:true,groups:true,data:false},
          scorer:{games:true,stats:true,groups:true,data:true},
          organiser:{games:true,stats:true,groups:true,data:true} },
-  org:{ edit:true, print:true, share:true }
+  org:{ edit:true, print:true, share:true },
+  games:{ scorer:false, organiser:true }      // who may add games, add a round or remove the last game
 };
 function normAccess(a){ const d=clone(ACCESS_DEFAULT); a=a||{};
   ['view','scorer','organiser'].forEach(r=>TAB_LIST.forEach(([k])=>{ const v=a.tabs&&a.tabs[r]&&a.tabs[r][k]; if(typeof v==='boolean') d.tabs[r][k]=v; }));
   ['edit','print','share'].forEach(k=>{ const v=a.org&&a.org[k]; if(typeof v==='boolean') d.org[k]=v; });
+  ['scorer','organiser'].forEach(r=>{ const v=a.games&&a.games[r]; if(typeof v==='boolean') d.games[r]=v; });
   return d; }
 const ACCESS = () => (S.access = S.access&&S.access.tabs&&['view','scorer','organiser'].every(r=>S.access.tabs[r]&&TAB_LIST.every(([k])=>typeof S.access.tabs[r][k]==='boolean'))
   ? S.access : normAccess(S.access));
@@ -733,7 +786,7 @@ const sortedSessions = () => S.sessions.slice().sort((a,b)=>toMin(a.start)-toMin
 
 /* ===================== who may do what =====================
    view       follows the scores and stats
-   scorer     shown as Referee — enters scores, runs the court console, adds games
+   scorer     shown as Referee — enters scores, runs the court console (adding games only if the admin allows)
    organiser  also edits players and courts, prints and shares (each switchable)
    admin      everything, including the event, branding, rules and passwords */
 const isAdmin = () => S.role==='admin';
@@ -744,6 +797,8 @@ const orgMay = k => isAdmin() || (isOrganiser() && ACCESS().org[k]!==false);
 const canEdit = () => orgMay('edit');
 const canExport = () => orgMay('print');
 const canShare = () => orgMay('share');
+const canChangeGames = () => { if(isAdmin()) return true; if(S.role!=='organiser'&&S.role!=='scorer') return false;
+  const g=(ACCESS().games||ACCESS_DEFAULT.games)[S.role]; return typeof g==='boolean'?g:ACCESS_DEFAULT.games[S.role]; };
 async function hashPin(p){
   const salted='risecg|'+(sync.event||'')+'|'+p;
   try{ if(window.crypto&&crypto.subtle&&crypto.subtle.digest){
@@ -763,7 +818,7 @@ function accessModal(err){
       <button class="btn acc" style="flex:1" onclick="tryAccess()">Unlock</button>
       <button class="btn" onclick="closeModal()">Cancel</button></div>
     <div class="alert ok" style="margin-top:14px"><span>ℹ</span><span>
-      <b>Referee</b> enters scores, runs the court console and adds games.<br>
+      <b>Referee</b> enters scores and runs the court console.<br>
       <b>Organiser</b> also edits players and courts, prints and shares.<br>
       <b>Admin</b> also sets up the event, branding, rules and passwords.</span></div>`;
 }
@@ -778,7 +833,7 @@ async function tryAccess(){
 function roleBlurb(){
   if(isAdmin()) return 'This device can do everything: setup, scores, players, printing, sharing, resets and the passwords.';
   if(isOrganiser()) return 'This device can enter scores'+(canEdit()?', edit players and courts':'')+(canExport()?', print':'')+(canShare()?', share images and WhatsApp summaries':'')+'.';
-  return 'This device can enter scores, run the court console and add games.';
+  return 'This device can enter scores and run the court console'+(canChangeGames()?', and add or remove games':'')+'.';
 }
 function pinBlock(kind){
   const org=kind==='org', set=org?!!S.orgHash:!!S.scorerHash, nm=org?'Organiser':'Referee';
@@ -1080,11 +1135,11 @@ function sessionCard(s){
     ${open?repeatSummary(s):''}
     ${s.players.length<4?`<div class="folded">Needs at least 4 players for doubles${canEdit()?` — <a href="#" onclick="go('groups');return false">add names on Groups</a>`:''}.</div>`:''}
     ${open?s.games.map((g,i)=>roundMark(s,i)+gameRow(s,g,i,g===cur)).join(''):`<div class="folded">Every game played — tap “All played” to show the scores.</div>`}
-    ${canScore()&&open?`<div class="sessFt">
+    ${canChangeGames()&&open?`<div class="sessFt">
       <button class="btn sm acc" onclick="addGame('${s.id}')" ${s.players.length<4?'disabled':''}>+ Add a game</button>
-      <button class="btn sm" onclick="addRound('${s.id}')" ${s.players.length<4?'disabled':''}>+ Repeat the round (${roundLen(s.players)} games)</button>
+      <button class="btn sm" onclick="addRound('${s.id}')" ${s.players.length<4?'disabled':''}>+ Another round (${roundLen(s.players)} games)</button>
       ${last&&!touched(last)?`<button class="btn sm" onclick="removeLast('${s.id}')">Remove last game</button>`:''}
-      <span class="note" style="align-self:center">Time left? The round starts again from its first game.</span></div>`:''}
+      <span class="note" style="align-self:center">Time left? The next round mixes the names again — pairs who have partnered least go first.</span></div>`:''}
   </div>`;
 }
 /* how many times this pair has already partnered in the same round (or the
@@ -1106,7 +1161,7 @@ function roundMark(s,i){
   const k=(i-R.base)/R.len; if(k%1) return '';
   const multi=s.games.length-R.base>R.len||R.base>0;
   if(k===0&&!multi) return '';
-  return `<div class="rdMark">Round ${k+1}${k?' — the same games again':` · ${R.len} games — everyone partners and plays against everyone`}</div>`;
+  return `<div class="rdMark">Round ${k+1}${k?' — new combinations':` · ${R.len} games — everyone partners and plays against everyone`}</div>`;
 }
 const rpt=(s,i,t)=>{ const n=pairBefore(s,i,t); return n?`<span class="rpt">↻ together ${ORD[n+1]||(n+1)+'th'} time</span>`:''; };
 function gameRow(s,g,i,isNow){
@@ -1134,17 +1189,17 @@ function oddBanner(){
     <ul>${L.map(({s,g})=>`<li>${esc(sessName(s))} · G${g.n}: ${esc(g.a.join(' & '))} <b>${g.sa}–${g.sb}</b> ${esc(g.b.join(' & '))}</li>`).join('')}</ul></span></div>`;
 }
 function addGame(sid){
-  if(!canScore()) return; const s=sessById(sid); if(!s) return;
+  if(!canChangeGames()) return toast('Adding games is not switched on for this device'); const s=sessById(sid); if(!s) return;
   const g=dealNext(s,s.games,1)[0]; if(!g) return toast('Needs at least 4 players');
   s.games.push(Object.assign(g,{n:s.games.length+1})); s.plan=s.games.length; save(); render();
   toast('Game '+s.games.length+' · '+g.a.join(' & ')+' v '+g.b.join(' & '));
 }
 function addRound(sid){
-  if(!canScore()) return; const s=sessById(sid); if(!s) return; const n=roundLen(s.players); if(!n) return toast('Needs at least 4 players');
+  if(!canChangeGames()) return toast('Adding games is not switched on for this device'); const s=sessById(sid); if(!s) return; const n=roundLen(s.players); if(!n) return toast('Needs at least 4 players');
   dealNext(s,s.games,n).forEach(g=>s.games.push(Object.assign(g,{n:s.games.length+1}))); s.plan=s.games.length; save(); render();
-  toast(s.court+': '+n+' more games — the round again');
+  toast(s.court+': round of '+n+' more games — new combinations');
 }
-function removeLast(sid){ if(!canScore()) return; const s=sessById(sid), g=s&&s.games[s.games.length-1];
+function removeLast(sid){ if(!canChangeGames()) return; const s=sessById(sid), g=s&&s.games[s.games.length-1];
   if(!g||touched(g)) return; s.games.pop(); s.plan=s.games.length; save(); render(); }
 
 /* ---------- Players: each person's night ---------- */
@@ -1467,7 +1522,7 @@ function setupCourts(){
   let h=`<div class="card ed" style="margin-bottom:12px"><div class="hd" style="padding:0 0 4px"><b>Courts &amp; times</b><span>${L.length} court${L.length===1?'':'s'}</span></div>
     <p class="note" style="margin:0 0 10px">Each court has its own group of players and its own games. The games come from the number of players:
     <b>one round</b> is the fewest games in which everyone partners everyone at least once and plays against everyone at least once —
-    4 players 3 games, 5 → 5, 6 → 9, 7 → 11, 8 → 14, 9 → 18, 10 → 25. Nobody plays or waits more than 2 games in a row (3 at most where the numbers force it). If there is time the round repeats. Start time and minutes are only a guide.
+    4 players 3 games, 5 → 5, 6 → 9, 7 → 11, 8 → 14, 9 → 18, 10 → 25. Nobody plays or waits more than 2 games in a row (3 at most where the numbers force it). If there is time, another round re-mixes the names so the pairs who have partnered most are kept apart. Start time and minutes are only a guide.
     Player names are added on the <b>Groups</b> tab.</p>`;
   L.forEach((s,k)=>{ const scored=s.games.filter(touched).length;
     h+=`<div class="crtRow">
@@ -1578,8 +1633,13 @@ function setupAccess(){
     <div class="accGrid"><div class="accH"></div>${roles.map(([,l])=>`<div class="accH">${l}</div>`).join('')}
       ${TAB_LIST.map(([k,l])=>`<div class="accT">${l}</div>`+roles.map(([r,rl])=>`<div class="accC">${swHTML(A.tabs[r][k],`setTabAccess('${r}','${k}')`,rl+' sees '+l)}</div>`).join('')).join('')}</div>
     <div class="bSep"></div><div class="hd" style="padding:0 0 8px"><b>What an organiser can do</b><span style="color:var(--dim);font-size:11px">on top of entering scores</span></div>
-    ${abil.map(([k,l,s])=>`<div class="accRow"><div><b>${l}</b><div class="note">${s}</div></div>${swHTML(A.org[k],`setOrgAccess('${k}')`,l)}</div>`).join('')}</div>`;
+    ${abil.map(([k,l,s])=>`<div class="accRow"><div><b>${l}</b><div class="note">${s}</div></div>${swHTML(A.org[k],`setOrgAccess('${k}')`,l)}</div>`).join('')}
+    <div class="bSep"></div><div class="hd" style="padding:0 0 8px"><b>Adding and removing games</b><span style="color:var(--dim);font-size:11px">+ Add a game · + Another round · Remove last game</span></div>
+    <p class="note" style="margin:0 0 6px">The admin can always do this. Switch it on for the others when they should be able to extend a court on the night.</p>
+    ${[['organiser','Organiser'],['scorer','Referee']].map(([r,l])=>`<div class="accRow"><div><b>${l}</b><div class="note">${(A.games||ACCESS_DEFAULT.games)[r]?'can add and remove games':'cannot add or remove games'}</div></div>${swHTML(!!(A.games||ACCESS_DEFAULT.games)[r],`setGamesAccess('${r}')`,l+' can add games')}</div>`).join('')}</div>`;
 }
+function setGamesAccess(r){ if(!isAdmin()) return; const A=ACCESS(); A.games=Object.assign({},ACCESS_DEFAULT.games,A.games||{}); A.games[r]=!A.games[r]; save(); render();
+  toast((r==='scorer'?'Referees':'Organisers')+(A.games[r]?' can now add and remove games':' can no longer add or remove games')); }
 function setTabAccess(r,k){ if(!isAdmin()) return; const A=ACCESS(); A.tabs[r][k]=!A.tabs[r][k]; save(); render(); }
 function setOrgAccess(k){ if(!isAdmin()) return; const A=ACCESS(); A.org[k]=!A.org[k]; save(); render(); }
 
@@ -1900,7 +1960,7 @@ function printSchedule(withData){
     <h4>${esc(s.court)} <span>· ${esc(s.players.join(', '))}</span></h4><table>
       <tr><th class="n">G</th><th class="tm">${showTimes()?'Time':''}</th><th>Team</th><th class="sc">Score</th><th class="sc">Score</th><th>Team</th><th class="st">Sitting out</th></tr>
       ${s.games.map((g,i)=>{ const p=withData&&played(g), ra=pairBefore(s,i,g.a), rb=pairBefore(s,i,g.b);
-        const head=R&&i>=R.base&&(i-R.base)%R.len===0&&(s.games.length-R.base>R.len)?`<tr class="rd"><td colspan="7">Round ${(i-R.base)/R.len+1}${i>R.base?' — the same games again':''}</td></tr>`:'';
+        const head=R&&i>=R.base&&(i-R.base)%R.len===0&&(s.games.length-R.base>R.len)?`<tr class="rd"><td colspan="7">Round ${(i-R.base)/R.len+1}${i>R.base?' — new combinations':''}</td></tr>`:'';
         return head+`<tr><td class="n">${g.n}</td><td class="tm">${gameTime(s,i)}</td>
         <td class="${p&&g.sa>g.sb?'w':''}">${esc(g.a.join(' & '))}${ra?' <i class="rp">↻</i>':''}</td><td class="sc">${p?g.sa:''}</td><td class="sc">${p?g.sb:''}</td>
         <td class="${p&&g.sb>g.sa?'w':''}">${esc(g.b.join(' & '))}${rb?' <i class="rp">↻</i>':''}</td><td class="st">${esc(g.sit.join(', '))}</td></tr>`; }).join('')}
